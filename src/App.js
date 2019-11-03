@@ -1,9 +1,18 @@
-import React , { PureComponent }from 'react'
+import React, { Component } from 'react'
+import { BrowserRouter as Router , Switch , Route} from 'react-router-dom';
 
-export default class App extends PureComponent {
+import Login from './pages/login/Login'
+import Admin from './pages/admin/Admin'
+
+export default class App extends Component {
   render() {
     return (
-      <div>haha</div>
-    );
+      <Router>
+        <Switch>
+          <Route path='/login' component={Login}/>
+          <Route path='/' component={Admin}/>
+        </Switch>
+      </Router>
+    )
   }
 }
