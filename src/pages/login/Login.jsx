@@ -1,21 +1,20 @@
-import React, { Component } from 'react'
-import { Form, Icon, Input, Button } from 'antd';
+import React, { PureComponent } from 'react'
+import { connect } from 'react-redux'
+import { Redirect } from 'react-router-dom'
+import { Form, Icon, Input, Button, message } from 'antd';
 
 import logo from '../../assets/images/logo.png'
 import './login.less'
+import * as actionCreators from '../../store/actionCreators'
+import * as storage from '../../utils/storage'
 
-class Login extends Component {
+message.config({ //修改message默认配置
+  top: 10,
+  duration: 2,
+  maxCount: 1,
+});
 
-  handleSubmit = (e) => {
-    e.preventDefault()
-    this.props.form.validateFields((error,values)=>{ //统一验证
-      if(!error){
-        alert('chenggong')
-      }else{
-        alert("shibai")
-      }
-    })
-  }
+class Login extends PureComponent {
   
   validatorPwd = (rules,value,callback) => {
     value = value.trim()
@@ -26,14 +25,18 @@ class Login extends Component {
     }else if(value.length>16){
       callback('密码不能超过16位！')
     }else if(!/^[a-zA-Z0-9_-]+$/.test(value)){
-      callback('密码不对！')
+      callback('密码必须是字母、数字或下划线组成！')
     }else{
       callback()
     }
   }
 
   render() {
-    const { getFieldDecorator } = this.props.form
+    const { userData, handleSubmit } = this.props
+    const { getFieldDecorator,validateFields } = this.props.form
+    if(userData._id){
+      return <Redirect to="/"/>
+    }
     return (
       <div className="login-wrapper">
         <div className='login-header'>
@@ -42,12 +45,13 @@ class Login extends Component {
         </div>
         <div className="login-content">
           <h2>LOGIN</h2>
-          <Form onSubmit={this.handleSubmit} className="login-form">
+          <Form onSubmit={(e)=>handleSubmit(e,validateFields)} className="login-form">
             <Form.Item>
               {
                 getFieldDecorator('username',{
                   initialValue:'',// 默认值
                   rules:[ 
+                    //antd自带规则：
                     {required:true,whitespace:true,message:"请输入用户名！"},
                     {min:4 ,message:"用户名不能少于4个字符！"},
                     {max:15,message:"用户名不能大于16个字符！"},
@@ -66,7 +70,8 @@ class Login extends Component {
                 getFieldDecorator('password',{
                   initialValue:'',
                   rules: [
-                    {validator: this.validatorPwd}// 自定义表单校验规则
+                    // 自定义校验规则：
+                    {validator: this.validatorPwd}
                   ]
                 })(
                   <Input
@@ -78,9 +83,7 @@ class Login extends Component {
               }          
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit" className="login-form-button">
-                Log in
-              </Button>
+              <Button type="primary" htmlType="submit" className="login-form-button">Log in</Button>
             </Form.Item>
           </Form>
         
@@ -89,7 +92,25 @@ class Login extends Component {
     )
   }
 }
-
 const WrapperLogin = Form.create()(Login)
 
-export default WrapperLogin
+const mapState = state => ({
+  userData:state.global.userData
+})
+const mapDispatch = dispatch => ({
+  handleSubmit(e,validateFields){
+    e.preventDefault()
+    validateFields((error,values)=>{ //统一验证，from自带属性
+      if(!error){
+        dispatch(actionCreators.login({...values}))
+      }else{
+        message.error("请输入用户名或密码！")
+      }
+    })
+  },
+  getLocalUser(user){
+    dispatch(actionCreators.getLocalUser(user))
+  }
+})
+
+export default connect(mapState,mapDispatch)(WrapperLogin) 
